@@ -1,7 +1,8 @@
 📦 myVCS — A Lightweight Git-Like Version Control System
 
 A custom version-control system implemented from scratch using Node.js, designed to mimic the internal workings of Git.
-This project implements objects, commits, trees, staging, branching, checkout, diff, status, and symbolic HEAD references — exactly like real Git does internally.
+This project implements objects, commits, trees, staging, branching, checkout, diff, status, and symbolic HEAD references 
+this exactly like real Git does internally.
 
 ⭐ Features Implemented
 
