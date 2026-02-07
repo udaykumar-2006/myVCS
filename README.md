@@ -109,8 +109,6 @@ staged but uncommitted files
 
 ⚙ Internal Architecture Explained
 
-This section makes you look GOD-LEVEL in interviews 😎🔥
-
 🔥 BLOB OBJECTS (File snapshots)
 
 Every file is stored as a BLOB inside .myvcs/objects/.
