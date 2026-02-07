@@ -4,6 +4,7 @@ A custom version-control system implemented from scratch using Node.js, designed
 This project implements objects, commits, trees, staging, branching, checkout, diff, status, and symbolic HEAD references — exactly like real Git does internally.
 
 ⭐ Features Implemented
+
 🔹 1. Repository Initialization (myvcs init)
 
 Creates a .myvcs/ folder with the following structure:
