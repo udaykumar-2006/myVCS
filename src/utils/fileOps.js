@@ -16,30 +16,69 @@ function writeObject(repoPath, hash, content) {
   return objectPath;
 }
 
-// NEW — STAGING AREA SUPPORT
+// STAGING AREA SUPPORT
 function stageFile(repoPath, filePath) {
   if (!fs.existsSync(filePath)) {
     throw new Error("File does not exist");
   }
 
-  // Read file content
   const content = fs.readFileSync(filePath);
-  
-  // Hash blob content
   const hash = hashObject(content);
 
-  // Save blob to objects/ (like Git does for staging)
+  // Save blob
   writeObject(repoPath, hash, content);
 
-  // Add entry to index
   const indexPath = path.join(repoPath, "index");
   const fileName = path.basename(filePath);
 
-  // Format: filename hash
-  const indexEntry = `${fileName} ${hash}\n`;
-  fs.appendFileSync(indexPath, indexEntry);
+  // Remove any previous entry for THIS file
+  let index = "";
+  if (fs.existsSync(indexPath)) {
+    const lines = fs.readFileSync(indexPath, "utf8").split("\n");
+    index = lines
+      .filter((l) => !l.startsWith(fileName + " "))
+      .join("\n");
+  }
+
+  const indexEntry = `${fileName} ${hash}`;
+  const finalIndex = (index.trim() + "\n" + indexEntry).trim() + "\n";
+
+  fs.writeFileSync(indexPath, finalIndex);
 
   console.log(`Staged: ${fileName}`);
 }
 
-module.exports = { writeObject, stageFile };
+// DELETE FEATURE — NEW
+function deleteFile(repoPath, filePath) {
+  const indexPath = path.join(repoPath, "index");
+  const fileName = path.basename(filePath);
+
+  //  Delete file from working directory
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+
+  //  Remove file from index (staging)
+  let indexEntries = {};
+  if (fs.existsSync(indexPath)) {
+    const lines = fs.readFileSync(indexPath, "utf8").trim().split("\n");
+    for (const line of lines) {
+      const [file, hash] = line.split(" ");
+      indexEntries[file] = hash;
+    }
+  }
+
+  // Remove this file entry
+  delete indexEntries[fileName];
+
+  // Rewrite updated index
+  const newIndex = Object.entries(indexEntries)
+    .map(([file, hash]) => `${file} ${hash}`)
+    .join("\n");
+
+  fs.writeFileSync(indexPath, newIndex + (newIndex ? "\n" : ""));
+
+  console.log(`Deleted & staged: ${fileName}`);
+}
+
+module.exports = { writeObject, stageFile, deleteFile };
