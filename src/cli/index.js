@@ -2,7 +2,7 @@
 
 const path = require("path");
 const initRepo = require("../core/initRepo");
-const { stageFile } = require("../utils/fileOps"); // ⭐ NEW
+const { stageFile,deleteFile } = require("../utils/fileOps"); 
 const { commit } = require("../core/commit");
 const { logCommits } = require("../core/log");
 const { createBranch } = require("../core/branch");
@@ -64,7 +64,18 @@ if (command === "init") {
 } else if (command === "diff") {
   diff(repoPath);
 
-} else {
+} else if(command === "delete") { 
+  const filePath = args[1];
+  if (!filePath) {
+    console.log("Usage: myvcs delete <file>");
+    process.exit(1);
+  }
+
+  // staging
+  deleteFile(repoPath, filePath);
+}
+
+else {
   console.log("Unknown command");
   console.log("");
   console.log("Commands:");
@@ -76,4 +87,5 @@ if (command === "init") {
   console.log("  myvcs checkout <branch>");
   console.log("  myvcs status");
   console.log("  myvcs diff");
+  console.log("  myvcs delete <file>"); 
 }
