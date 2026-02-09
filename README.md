@@ -1,236 +1,291 @@
-📦 myVCS — A Lightweight Git-Like Version Control System
+:file_folder:***myVCS — A Lightweight Git-Like Version Control System (Built From Scratch)***
 
-A custom version-control system implemented from scratch using Node.js, designed to mimic the internal workings of Git.
-This project implements objects, commits, trees, staging, branching, checkout, diff, status, and symbolic HEAD references 
-this exactly like real Git does internally.
+myVCS is a custom version-control system built using Node.js, replicating the core internals of Git:
 
-⭐ Features Implemented
+Blob objects
 
-🔹 1. Repository Initialization (myvcs init)
+Tree snapshots
 
-Creates a .myvcs/ folder with the following structure:
+Commit objects
 
-.myvcs/
- ├── HEAD
- ├── commits/
- ├── objects/
- ├── index               (staging area)
- └── refs/
-     └── heads/
-         └── main
+Staging area
 
-🔹 2. Staging Area (myvcs add <file>)
+Branch tracking
 
-Implements a Git-like INDEX file.
+Checkout
 
-When you add a file:
+Diff engine
 
-Hash → Blob object created in .myvcs/objects
+File deletions
 
-File entry added to .myvcs/index
+Status
 
-🔹 3. Commit System (myvcs commit -m "msg")
+Symbolic HEAD
 
-Creates a commit object containing:
+:bulb:***Features***
 
-{
-  "tree": "<tree-hash>",
-  "parent": "<parent-commit>",
-  "message": "your commit message",
-  "timestamp": 123456789
-}
-
-
-Then writes the commit to .myvcs/commits/<hash>,
-and updates refs/heads/<currentBranch>.
-
-🔹 4. Tree Objects (Snapshots)
-
-Your system builds tree objects like Git.
-
-A tree object lists all files + their hash:
-
-file1.txt <blob-hash>
-file2.txt <blob-hash>
-
-
-Tree hash stored in .myvcs/objects/.
-
-🔹 5. Log System (myvcs log)
-
-Prints commit history from HEAD backwards:
-
-commit <hash>
-message: ...
-tree: ...
-parent: ...
-time: ...
-
-🔹 6. Branching (myvcs branch <name>)
+:arrow_right: Repository Initialization
+```
+myvcs init
+```
 
 Creates:
+```
+.myvcs/
+ ├── HEAD
+ ├── index
+ ├── objects/
+ ├── commits/
+ └── refs/
+      └── heads/
+          └── main
+```
+:arrow_right: Staging Files
+```
+myvcs add <file>
+```
 
-.myvcs/refs/heads/<branchName>
+Computes blob hash
 
+Saves blob under .myvcs/objects/
 
-Containing the commit hash of the current branch.
+Adds entry to staging area (index)
 
-🔹 7. Checkout (myvcs checkout <branch>)
+Example entry:
+```
+test1.txt 8b787bd92...
+```
+:arrow_right: Commit System
+```
+myvcs commit -m "message"
+```
 
-Updates HEAD:
+Creates commit object:
+```
+{
+  "tree": "<tree-hash>",
+  "parent": "<previous-hash>",
+  "message": "message",
+  "timestamp": 1717941111
+}
+```
 
-ref: refs/heads/<branch>
+Stored under:
+```
+.myvcs/commits/<hash>
+```
+:arrow_right: Tree Objects (Snapshots)
 
+Represent the current staged state:
+```
+file1.txt <blob-hash>
+file2.txt <blob-hash>
+```
 
-Now all commits will belong to that branch.
-
-🔹 8. Diff (myvcs diff)
-
-Shows difference between working directory and last commit:
-
---- file.txt ---
-- old line
-+ new line
-
-
-Also detects new files:
-
-New file: test.txt
-
-🔹 9. Status (myvcs status)
-
-Shows:
+Stored under:
+```
+.myvcs/objects/<tree-hash>
+```
+:arrow_right:Status
+```
+myvcs status
+```
+Detects:
 
 modified files
 
-new files
+deleted files
 
-empty working tree
+new untracked files
 
-staged but uncommitted files
+clean working directory
 
-⚙ Internal Architecture Explained
+Example:
+```
+modified: test1.txt
+new file: hello.txt
+deleted: old.txt
+```
+:arrow_right: Diff Engine
+```
+myvcs diff
+```
+Example output:
+```
+--- test1.txt ---
+- old line
++ new added line
++
+```
 
-🔥 BLOB OBJECTS (File snapshots)
+Detects new files:
+```
+New file: hello.txt
+```
+:arrow_right:Branching
+```
+myvcs branch feature-x
+```
 
-Every file is stored as a BLOB inside .myvcs/objects/.
+:arrow_right:Creates:
+```
+.myvcs/refs/heads/feature-x
+```
+:arrow_right:Checkout
+```
+myvcs checkout feature-x
+```
 
-Created using:
+:arrow_right:Updates HEAD:
+```
+ref: refs/heads/feature-x
+```
+:arrow_right:Delete Feature (git rm equivalent)
+```
+myvcs delete <file>
+```
 
-hashObject(content)
-writeObject(repo, hash, content)
+Does:
 
-🌳 TREE OBJECTS (Folder snapshots)
+Removes file from working directory
 
-A tree object maps filename → blob hash.
+Removes file from staging (index)
 
-Every commit has a unique tree representing the entire repo snapshot.
+Next commit removes file from snapshot
 
-🧠 COMMIT OBJECTS (Version history)
+Example:
+```
+myvcs delete test1.txt
+myvcs commit -m "removed test1"
+```
+:checkered_flag: **Internal Architecture**
 
-Stored in .myvcs/commits/<hash>.
+:small_orange_diamond:Blob Objects
 
-Contains:
+Stored at:
+```
+.myvcs/objects/<hash>
+```
+
+Contain raw file content.
+
+:small_orange_diamond:Tree Objects
+
+Contain mapping:
+```
+filename blobhash
+```
+:small_orange_diamond:Commit Objects
+
+Stored under:
+```
+.myvcs/commits/<hash>
+```
+
+Each commit contains:
 
 tree hash
 
-parent commit hash
+parent hash
 
 message
 
 timestamp
 
-This exactly mirrors Git’s internal commit structure.
+:small_orange_diamond:Staging Area (index)
 
-🎯 HEAD (Symbolic reference)
-
-HEAD contains:
-
-ref: refs/heads/main
-
-
-Meaning HEAD points to a branch,
-and the branch file contains the latest commit hash.
-
-🌿 Branching
-
-When you do:
-
-myvcs branch feature-x
-
-
-Creates:
-
-.myvcs/refs/heads/feature-x
-
-
-with content:
-
-<current commit hash>
-
-
-Checkout switches HEAD to that branch.
-
-🗂 INDEX (Staging area)
-
-.myvcs/index contains:
-
+Stores staged entries:
+```
 filename blobhash
-filename2 blobhash
+```
 
+Commit always reads ONLY index.
 
-Commit reads only staged files.
+:small_orange_diamond:HEAD Pointer
+```
+ref: refs/heads/main
+```
 
-🧪 Usage Guide
-Initialize repo
+Symbolic reference to active branch.
+
+:small_orange_diamond:Branch Refs
+
+Each branch stores:
+```
+<latest-commit-hash>
+```
+:hammer_and_wrench: **Commands Overview**
+
+Initialize
+```
+myvcs init
+```
+Stage
+```
+myvcs add file.txt
+```
+Commit
+```
+myvcs commit -m "msg"
+```
+Log
+```
+myvcs log
+```
+Status
+```
+myvcs status
+```
+Diff
+```
+myvcs diff
+```
+Create Branch
+```
+myvcs branch <name>
+```
+Checkout Branch
+```
+myvcs checkout <branch>
+```
+Delete File
+```
+myvcs delete file.txt
+```
+:fire:**Full Workflow Example** 
+```
 myvcs init
 
-Create file
 echo "hello" > test1.txt
-
-Stage file
 myvcs add test1.txt
+myvcs commit -m "first commit"
 
-Commit
-myvcs commit -m "initial commit"
-
-See history
-myvcs log
-
-Modify a file
 echo "new line" >> test1.txt
-
-Check diff
 myvcs diff
-
-Check status
 myvcs status
 
-Create branch
-myvcs branch feature-x
+myvcs add test1.txt
+myvcs commit -m "updated test1"
 
-Switch branch
+myvcs branch feature-x
 myvcs checkout feature-x
 
-Commit on new branch
+echo "branch update" >> test1.txt
 myvcs add test1.txt
-myvcs commit -m "changes on feature-x"
+myvcs commit -m "feature commit"
 
-👨‍💻 Folder Structure
-myVCS/
- ├── src/
- │   ├── cli/index.js
- │   ├── core/
- │   │     ├── initRepo.js
- │   │     ├── commit.js
- │   │     ├── diff.js
- │   │     ├── log.js
- │   │     ├── tree.js
- │   │     ├── branch.js
- │   │     ├── checkout.js
- │   │     └── status.js
- │   └── utils/
- │         ├── hash.js
- │         └── fileOps.js
- ├── .myvcsignore
- └── package.json
+myvcs checkout main
+
+myvcs delete test1.txt
+myvcs commit -m "removed test1"
+```
+
+:jigsaw: **Tech Stack**
+
+:computer: Node.js
+
+:page_facing_up: Native filesystem APIs
+
+:alien: Crypto hashing
+
+Pure logic (no external libs)
