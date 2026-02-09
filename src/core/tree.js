@@ -4,56 +4,43 @@ const { hashObject } = require("../utils/hash");
 const { writeObject } = require("../utils/fileOps");
 
 function createTree(repoPath) {
-  const workDir = process.cwd(); // current working folder
-  const files = fs.readdirSync(workDir);
+  const indexPath = path.join(repoPath, "index");
 
-  // Load ignore file (.myvcsignore)
-const ignoreFilePath = path.join(workDir, ".myvcsignore");
-let ignoreList = [];
+  // No staged files means empty tree
+  if (!fs.existsSync(indexPath)) {
+    const emptyTreeHash = hashObject("");
+    writeObject(repoPath, emptyTreeHash, "");
+    return emptyTreeHash;
+  }
 
-if (fs.existsSync(ignoreFilePath)) {
-  ignoreList = fs.readFileSync(ignoreFilePath, "utf8")
-    .split("\n")
-    .map(line => line.trim())
-    .filter(line => line.length > 0);
-}
-
+  const lines = fs.readFileSync(indexPath, "utf8").trim().split("\n");
 
   let entries = [];
 
-  for (const file of files) {
-    const filePath = path.join(workDir, file);
+  for (const line of lines) {
+    if (!line.trim()) continue;
 
-    // skip files from .myvcsignore
-if (ignoreList.includes(file)) continue;
+    const [fileName, blobHash] = line.split(" ");
 
+    const workPath = path.join(process.cwd(), fileName);
 
-    // skip .myvcs folder and node_modules etc.
-    if (file === ".myvcs" || file === "node_modules") continue;
+    // FILE EXISTS in working directory → include in tree
+    if (fs.existsSync(workPath)) {
+      const content = fs.readFileSync(workPath);
+      const actualBlobHash = hashObject(content);
 
-    // skip folders for now (we’ll add recursive trees later)
-    if (fs.lstatSync(filePath).isDirectory()) continue;
+      // Write blob if not saved yet
+      writeObject(repoPath, actualBlobHash, content);
 
-    // read file content
-    const content = fs.readFileSync(filePath);
-
-    // generate blob hash
-    const blobHash = hashObject(content);
-
-    // save blob to objects folder
-    writeObject(repoPath, blobHash, content);
-
-    // add entry to tree format
-    entries.push(`${file} ${blobHash}`);
+      // Use latest hash
+      entries.push(`${fileName} ${actualBlobHash}`);
+    }
+    // FILE DOES NOT EXIST → was deleted → do NOT include in tree
   }
 
-  // create tree object content
   const treeContent = entries.join("\n");
-
-  // hash tree
   const treeHash = hashObject(treeContent);
 
-  // save tree object
   writeObject(repoPath, treeHash, treeContent);
 
   return treeHash;
